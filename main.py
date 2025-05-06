@@ -7,6 +7,7 @@ from openai import OpenAI
 import re
 load_dotenv()
 
+
 # Cargar claves
 CHAT_KEY = os.getenv("OPENAI_API_KEY")
 ASSISTANT_ID = os.getenv("ASSISTANT_DEV_2")
@@ -17,7 +18,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200"],
+    allow_origins=["*"],
     allow_methods=["GET"],
     allow_headers=["*"],
 )
@@ -65,3 +66,10 @@ async def add_message(message, thread_id):
 async def create_thread_endpoint():
     thread_id = await create_thread()
     return {"thread_id": thread_id}
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    port = int(os.environ.get("PORT", 8000))  # Render establece PORT
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
