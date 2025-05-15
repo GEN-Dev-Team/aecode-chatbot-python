@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import os
 from openai import OpenAI
 import re
+import asyncio
 load_dotenv()
 
 
@@ -41,13 +42,25 @@ async def stream_assistant_response(user_message, thread_id):
             thread_id=thread_id,
         )
 
-        yield "event: start\ndata: Iniciando respuesta...\n\n"  # ✅ ENVÍA PRIMERA LÍNEA
+        yield "event: start\ndata: Iniciando respuesta...\n\n"
+        await asyncio.sleep(0)
 
+        buffer = ""
         with stream as run_stream:
             for text in run_stream.text_deltas:
-                texto = re.sub(r'【.*?】', '', text)
-                texto = texto.replace("\n", "<br>")
-                yield f"data: {texto}\n\n"
+                token = re.sub(r'【.*?】', '', text)
+                buffer += token
+
+                # Si acumulamos al menos 20 caracteres o llega salto de línea
+                if len(buffer) >= 20 or "\n" in token:
+                    yield f"data: {buffer}\n\n"
+                    buffer = ""
+                    await asyncio.sleep(0)
+
+            # Emitir lo que quede pendiente
+            if buffer.strip():
+                yield f"data: {buffer}\n\n"
+                await asyncio.sleep(0)
 
         yield "event: end\ndata: [[END]]\n\n"
 
